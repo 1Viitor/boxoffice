@@ -4,6 +4,7 @@ import { getMovieById } from "@/movie_catalog/repo";
 import { listForecasts, latestByType } from "@/forecasting/repo";
 import { listNotes } from "@/notes/repo";
 import { listObservations, latestByMetric } from "@/canonical_data/repo";
+import { listPredictions } from "@/prediction/repo";
 import { Poster } from "@/components/Poster";
 import { UntrackButton } from "@/components/UntrackButton";
 import { ForecastEditor } from "@/components/ForecastEditor";
@@ -12,6 +13,8 @@ import { CanonicalChart } from "@/components/CanonicalChart";
 import { CanonicalChangeFeed } from "@/components/CanonicalChangeFeed";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { SyncNowButton } from "@/components/SyncNowButton";
+import { PredictButton } from "@/components/PredictButton";
+import { PredictionPanel } from "@/components/PredictionPanel";
 import { formatDate, formatDateTime, formatTheatricalDay, primaryReleaseRow, timeAgo } from "@/lib/format";
 import { formatMoney, formatSignedMoney } from "@/forecasting/money";
 import { FORECAST_TYPES } from "@/forecasting/types";
@@ -28,10 +31,11 @@ export default async function MovieDetailPage(props: {
   const movie = await getMovieById(id);
   if (!movie) notFound();
 
-  const [forecasts, notes, observations] = await Promise.all([
+  const [forecasts, notes, observations, predictions] = await Promise.all([
     listForecasts(id),
     listNotes(id),
     listObservations(id),
+    listPredictions(id),
   ]);
 
   const latestForecast = latestByType(forecasts);
@@ -152,8 +156,9 @@ export default async function MovieDetailPage(props: {
             </div>
           )}
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-wrap items-start gap-2">
             <SyncNowButton movieId={movie.id} />
+            {movie.is_active && <PredictButton movieId={movie.id} />}
             <a
               href={movie.the_numbers_url}
               target="_blank"
@@ -205,6 +210,15 @@ export default async function MovieDetailPage(props: {
       <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
         <CanonicalChart observations={observations} />
       </div>
+
+      <h2 className="mt-10 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        Predict
+      </h2>
+      <p className="mt-1 text-sm text-zinc-400">
+        AI-assisted opening weekend estimate from web research and our canonical
+        actuals. Each run is saved; re-run as new numbers arrive.
+      </p>
+      <PredictionPanel latest={predictions[0] ?? null} history={predictions} />
 
       <h2 className="mt-10 text-xs font-semibold uppercase tracking-wide text-zinc-500">
         Our forecasts
