@@ -9,6 +9,7 @@ import { UntrackButton } from "@/components/UntrackButton";
 import { ForecastEditor } from "@/components/ForecastEditor";
 import { NoteForm } from "@/components/NoteForm";
 import { CanonicalChart } from "@/components/CanonicalChart";
+import { CanonicalChangeFeed } from "@/components/CanonicalChangeFeed";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { SyncNowButton } from "@/components/SyncNowButton";
 import { formatDate, formatDateTime, formatTheatricalDay, primaryReleaseRow, timeAgo } from "@/lib/format";
@@ -132,13 +133,24 @@ export default async function MovieDetailPage(props: {
                 {timeAgo(movie.last_successful_check_at)}
               </div>
             </div>
-            <div>
-              Last canonical change
-              <div className="text-zinc-300">
-                {timeAgo(movie.last_canonical_change_at)}
+            {movie.status !== "WEEKEND_LIVE" && (
+              <div>
+                Last canonical change
+                <div className="text-zinc-300">
+                  {timeAgo(movie.last_canonical_change_at)}
+                </div>
               </div>
-            </div>
+            )}
           </dl>
+
+          {movie.status === "WEEKEND_LIVE" && (
+            <div className="mt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Canonical changes
+              </h3>
+              <CanonicalChangeFeed observations={observations} />
+            </div>
+          )}
 
           <div className="mt-6 flex flex-wrap gap-2">
             <SyncNowButton movieId={movie.id} />
