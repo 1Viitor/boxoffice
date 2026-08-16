@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchMovies } from "@/lib/the-numbers/search";
-import { searchScheduleCache } from "@/lib/repo";
+import { searchMovies } from "@/integrations/the-numbers/search";
+import { searchScheduleCache } from "@/movie_catalog/repo";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json({ results });
   } catch (e) {
-    // If the live search fails, try the cached schedule as a fallback.
     const fallback = await searchScheduleCache(q, 10).catch(() => []);
     if (fallback.length) {
       return NextResponse.json({ results: fallback, degraded: true });

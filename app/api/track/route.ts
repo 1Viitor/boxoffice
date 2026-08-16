@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchMovieDetail } from "@/lib/the-numbers/detail";
-import { evaluateEligibility } from "@/lib/eligibility";
+import { fetchMovieDetail } from "@/integrations/the-numbers/detail";
+import { evaluateEligibility } from "@/movie_catalog/eligibility";
 import { isDbConfigured } from "@/lib/db";
-import { trackMovie } from "@/lib/repo";
+import { trackMovie } from "@/movie_catalog/repo";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Re-fetch + re-evaluate server-side so eligibility can't be bypassed.
     const detail = await fetchMovieDetail(url);
     const verdict = evaluateEligibility(detail.domesticReleases);
     if (!verdict.eligible) {
@@ -37,8 +36,12 @@ export async function POST(req: NextRequest) {
       );
     }
     const movieId = await trackMovie(detail, body?.thumbnail ?? null);
+    const { checkMovie } = await import("@/monitoring/poller");
+    await checkMovie({ id: movieId, the_numbers_url: detail.url }).catch(() => {});
     return NextResponse.json({ movieId, eligible: true });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    const message = (e as Error).message;
+    const status = message.includes("Tracker is full") ? 409 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

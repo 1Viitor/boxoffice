@@ -7,7 +7,7 @@ import {
   slugFromUrl,
   yearFromSlug,
 } from "./parse";
-import type { DomesticRelease } from "@/lib/types";
+import type { DomesticRelease } from "@/movie_catalog/types";
 
 export interface DetailResult {
   url: string;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMovieById, deleteMovie } from "@/lib/repo";
+import { getMovieById, untrackMovie } from "@/movie_catalog/repo";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export async function DELETE(
 ) {
   const { id } = await ctx.params;
   try {
-    await deleteMovie(id);
+    await untrackMovie(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

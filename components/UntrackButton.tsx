@@ -13,7 +13,7 @@ export function UntrackButton({ id }: { id: string }) {
     try {
       const res = await fetch(`/api/movies/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to untrack");
-      router.push("/movies");
+            router.push("/");
       router.refresh();
     } catch {
       setBusy(false);
@@ -26,7 +26,7 @@ export function UntrackButton({ id }: { id: string }) {
       disabled={busy}
       className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
     >
-      {busy ? "Removing…" : "Untrack"}
+      {busy ? "Removing…" : "Remove from tracking"}
     </button>
   );
 }

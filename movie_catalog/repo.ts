@@ -1,10 +1,23 @@
-import { getSupabaseAdmin } from "./db";
-import type { DetailResult } from "./the-numbers/detail";
-import { fetchReleaseSchedule } from "./the-numbers/schedule";
-import { slugFromUrl } from "./the-numbers/parse";
-import type { Candidate, TrackedMovie } from "./types";
+import { getSupabaseAdmin } from "@/lib/db";
+import type { DetailResult } from "@/integrations/the-numbers/detail";
+import { fetchReleaseSchedule } from "@/integrations/the-numbers/schedule";
+import { slugFromUrl } from "@/integrations/the-numbers/parse";
+import { primaryReleaseRow } from "@/lib/format";
+import { MAX_TRACKED, type Candidate, type TrackedMovie } from "./types";
+import { computeStatus } from "./status";
 
-export async function getTrackedMovies(): Promise<TrackedMovie[]> {
+export async function countActiveMovies(): Promise<number> {
+  const db = getSupabaseAdmin();
+  if (!db) return 0;
+  const { count, error } = await db
+    .from("movies")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function getAllMovies(): Promise<TrackedMovie[]> {
   const db = getSupabaseAdmin();
   if (!db) return [];
   const { data, error } = await db
@@ -12,7 +25,19 @@ export async function getTrackedMovies(): Promise<TrackedMovie[]> {
     .select("*, releases(*)")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data as TrackedMovie[]) ?? [];
+  return ((data as TrackedMovie[]) ?? []).map(withComputedStatus);
+}
+
+export async function getTrackedMovies(): Promise<TrackedMovie[]> {
+  const db = getSupabaseAdmin();
+  if (!db) return [];
+  const { data, error } = await db
+    .from("movies")
+    .select("*, releases(*)")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data as TrackedMovie[]) ?? []).map(withComputedStatus);
 }
 
 export async function getMovieById(id: string): Promise<TrackedMovie | null> {
@@ -24,16 +49,37 @@ export async function getMovieById(id: string): Promise<TrackedMovie | null> {
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return (data as TrackedMovie) ?? null;
+  return data ? withComputedStatus(data as TrackedMovie) : null;
 }
 
-/** Upsert a movie (by slug) plus its domestic releases. Returns the movie id. */
+function withComputedStatus(movie: TrackedMovie): TrackedMovie {
+  const rel = primaryReleaseRow(movie.releases);
+  return { ...movie, status: computeStatus(rel?.release_date) };
+}
+
 export async function trackMovie(
   detail: DetailResult,
   thumbnail: string | null
 ): Promise<string> {
   const db = getSupabaseAdmin();
   if (!db) throw new Error("Database is not configured.");
+
+  const { data: existing } = await db
+    .from("movies")
+    .select("id, is_active")
+    .eq("the_numbers_slug", detail.slug)
+    .maybeSingle();
+
+  if (!existing?.is_active) {
+    const active = await countActiveMovies();
+    if (active >= MAX_TRACKED) {
+      throw new Error(`Tracker is full (${MAX_TRACKED} movies). Untrack one first.`);
+    }
+  }
+
+  const status = computeStatus(
+    detail.domesticReleases.find((r) => r.date && !r.isReRelease)?.date
+  );
 
   const { data: movie, error } = await db
     .from("movies")
@@ -44,7 +90,8 @@ export async function trackMovie(
         title: detail.title,
         year: detail.year,
         thumbnail_url: thumbnail ?? detail.thumbnail ?? null,
-        status: "tracked",
+        status,
+        is_active: true,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "the_numbers_slug" }
@@ -55,7 +102,6 @@ export async function trackMovie(
   if (error) throw new Error(error.message);
   const movieId = movie!.id as string;
 
-  // Replace releases so re-tracking reflects the latest data.
   await db.from("releases").delete().eq("movie_id", movieId);
   if (detail.domesticReleases.length) {
     const rows = detail.domesticReleases.map((r) => ({
@@ -75,14 +121,17 @@ export async function trackMovie(
   return movieId;
 }
 
-export async function deleteMovie(id: string): Promise<void> {
+/** Soft-remove from the active list. History stays. */
+export async function untrackMovie(id: string): Promise<void> {
   const db = getSupabaseAdmin();
   if (!db) throw new Error("Database is not configured.");
-  const { error } = await db.from("movies").delete().eq("id", id);
+  const { error } = await db
+    .from("movies")
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq("id", id);
   if (error) throw new Error(error.message);
 }
 
-/** Refresh the release-schedule cache table. Returns number of rows written. */
 export async function ingestSchedule(): Promise<number> {
   const db = getSupabaseAdmin();
   if (!db) throw new Error("Database is not configured.");
@@ -102,17 +151,14 @@ export async function ingestSchedule(): Promise<number> {
     scraped_at: new Date().toISOString(),
   }));
 
-  const { error } = await db
-    .from("schedule_cache")
-    .upsert(rows, {
-      onConflict: "title,release_date_text,release_type",
-      ignoreDuplicates: false,
-    });
+  const { error } = await db.from("schedule_cache").upsert(rows, {
+    onConflict: "title,release_date_text,release_type",
+    ignoreDuplicates: false,
+  });
   if (error) throw new Error(error.message);
   return rows.length;
 }
 
-/** Fallback title search over the ingested schedule cache. */
 export async function searchScheduleCache(
   query: string,
   limit = 10

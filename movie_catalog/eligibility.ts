@@ -1,6 +1,5 @@
-import type { DomesticRelease } from "@/lib/types";
+import type { DomesticRelease } from "./types";
 
-// A domestic theatrical release of any of these types makes a movie eligible.
 export const THEATRICAL_TYPES = [
   "Wide",
   "Limited",
@@ -20,11 +19,6 @@ export interface EligibilityVerdict {
   primary: DomesticRelease | null;
 }
 
-/**
- * Eligible if there is at least one domestic theatrical release
- * (Wide / Limited / IMAX / Expands Wide / Special Engagement),
- * excluding Canceled entries and pure re-releases.
- */
 export function evaluateEligibility(
   domesticReleases: DomesticRelease[]
 ): EligibilityVerdict {
@@ -51,7 +45,6 @@ export function evaluateEligibility(
     return { eligible: false, reason, primary: null };
   }
 
-  // Prefer the earliest Wide release; otherwise the earliest qualifying release.
   const sorted = [...qualifying].sort((a, b) =>
     (a.date || "9999-12-31").localeCompare(b.date || "9999-12-31")
   );

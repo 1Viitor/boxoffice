@@ -3,9 +3,9 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Boxoffice — Track theatrical releases",
+  title: "Boxoffice — Forecast theatrical releases",
   description:
-    "Search The Numbers, validate a domestic theatrical release, and track eligible movies.",
+    "Track up to 20 movies, log your box-office forecasts, and compare them to the actuals.",
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 sm:px-6">
+            <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 sm:px-6">
           <header className="flex items-center justify-between py-5">
             <Link href="/" className="group flex items-center gap-2">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-blue-500 to-fuchsia-500 text-sm font-black text-white shadow-lg shadow-blue-500/20">
@@ -29,13 +29,19 @@ export default function RootLayout({
                 href="/"
                 className="rounded-md px-3 py-1.5 text-zinc-300 transition hover:bg-white/5 hover:text-white"
               >
-                Add movie
+                Movies
               </Link>
               <Link
-                href="/movies"
+                href="/performance"
                 className="rounded-md px-3 py-1.5 text-zinc-300 transition hover:bg-white/5 hover:text-white"
               >
-                Tracked
+                Performance
+              </Link>
+              <Link
+                href="/add"
+                className="rounded-md px-3 py-1.5 text-zinc-300 transition hover:bg-white/5 hover:text-white"
+              >
+                Add movie
               </Link>
             </nav>
           </header>

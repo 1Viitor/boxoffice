@@ -29,6 +29,9 @@ yarn-error.log*
 # supabase local/link state
 .supabase
 
+# scraper debug dumps
+tmp-*.html
+
 # vercel
 .vercel
 

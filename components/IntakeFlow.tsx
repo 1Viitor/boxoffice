@@ -255,7 +255,7 @@ export function IntakeFlow() {
               </Link>
             )}
             <Link
-              href="/movies"
+              href="/"
               className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/15"
             >
               View tracker

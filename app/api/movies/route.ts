@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTrackedMovies } from "@/lib/repo";
+import { getTrackedMovies } from "@/movie_catalog/repo";
 import { isDbConfigured } from "@/lib/db";
 
 export const dynamic = "force-dynamic";

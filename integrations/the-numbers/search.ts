@@ -1,7 +1,7 @@
 import { tnFetch, BASE_URL, absoluteUrl } from "./client";
 import { getSuggestToken, clearSuggestToken } from "./token";
 import { slugFromUrl } from "./parse";
-import type { Candidate } from "@/lib/types";
+import type { Candidate } from "@/movie_catalog/types";
 
 interface SuggestItem {
   display_name?: string;

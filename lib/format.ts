@@ -1,4 +1,4 @@
-import type { ReleaseRow } from "./types";
+import type { ReleaseRow } from "@/movie_catalog/types";
 
 export function formatDate(
   iso: string | null | undefined,
@@ -10,6 +10,34 @@ export function formatDate(
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function formatShortDate(iso: string | null | undefined): string {
+  if (!iso) return "TBD";
+  const day = iso.length >= 10 ? iso.slice(0, 10) : iso;
+  const d = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) {
+    const t = new Date(iso);
+    if (Number.isNaN(t.getTime())) return iso;
+    return t.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+  return d.toLocaleDateString("en-US", {
+    month: "short",
     day: "numeric",
     timeZone: "UTC",
   });
@@ -43,4 +71,18 @@ export function primaryReleaseRow(
     (a.release_date || "9999-12-31").localeCompare(b.release_date || "9999-12-31")
   );
   return sorted.find((r) => (r.release_type || "").toLowerCase() === "wide") || sorted[0];
+}
+
+export function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "—";
+  const sec = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.round(sec / 60);
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 48) return `${hr} hr ago`;
+  const day = Math.round(hr / 24);
+  return `${day}d ago`;
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchMovieDetail } from "@/lib/the-numbers/detail";
-import { evaluateEligibility } from "@/lib/eligibility";
-import type { ValidationResult } from "@/lib/types";
+import { fetchMovieDetail } from "@/integrations/the-numbers/detail";
+import { evaluateEligibility } from "@/movie_catalog/eligibility";
+import type { ValidationResult } from "@/movie_catalog/types";
 
 export const dynamic = "force-dynamic";
 
