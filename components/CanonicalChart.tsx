@@ -6,7 +6,7 @@ import {
   formatMoneyExact,
   formatSignedMoney,
 } from "@/forecasting/money";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatTheatricalDay } from "@/lib/format";
 import { formatError } from "@/analytics";
 import type { ObservationRow } from "@/canonical_data/types";
 import { CANONICAL_METRICS, metricLabel } from "@/canonical_data/types";
@@ -110,7 +110,15 @@ export function CanonicalChart({
               {formatMoneyExact(active.value)}
             </div>
             <div className="mt-1 text-zinc-500">
-              Observed: {formatDateTime(active.observed_at)}
+              {active.theatrical_date ? (
+                <>
+                  Theatrical: {formatTheatricalDay(active.theatrical_date)}
+                  <br />
+                  Ingested: {formatDateTime(active.observed_at)}
+                </>
+              ) : (
+                <>Ingested: {formatDateTime(active.observed_at)}</>
+              )}
             </div>
             {active.previous_value != null && (
               <>
@@ -130,7 +138,8 @@ export function CanonicalChart({
       <table className="mt-4 w-full text-left text-sm">
         <thead className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
           <tr>
-            <th className="py-2">Time</th>
+            <th className="py-2">Theatrical day</th>
+            <th className="py-2">Ingested</th>
             <th className="py-2 text-right">Value</th>
             <th className="py-2 text-right">Change</th>
             <th className="py-2 text-right">Change %</th>
@@ -139,6 +148,11 @@ export function CanonicalChart({
         <tbody className="divide-y divide-white/5">
           {points.map((row) => (
             <tr key={row.id}>
+              <td className="py-2 text-zinc-300">
+                {row.theatrical_date
+                  ? formatTheatricalDay(row.theatrical_date)
+                  : "—"}
+              </td>
               <td className="py-2 text-zinc-400">{formatDateTime(row.observed_at)}</td>
               <td className="py-2 text-right font-mono">{formatMoney(row.value)}</td>
               <td className="py-2 text-right font-mono text-zinc-300">

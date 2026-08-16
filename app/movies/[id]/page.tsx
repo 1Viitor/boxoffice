@@ -11,7 +11,7 @@ import { NoteForm } from "@/components/NoteForm";
 import { CanonicalChart } from "@/components/CanonicalChart";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { SyncNowButton } from "@/components/SyncNowButton";
-import { formatDate, formatDateTime, primaryReleaseRow, timeAgo } from "@/lib/format";
+import { formatDate, formatDateTime, formatTheatricalDay, primaryReleaseRow, timeAgo } from "@/lib/format";
 import { formatMoney, formatSignedMoney } from "@/forecasting/money";
 import { FORECAST_TYPES } from "@/forecasting/types";
 import { CANONICAL_METRICS } from "@/canonical_data/types";
@@ -172,9 +172,14 @@ export default async function MovieDetailPage(props: {
               <div className="mt-1 font-mono text-lg text-white">
                 {row ? formatMoney(row.value) : "—"}
               </div>
+              {row?.theatrical_date && (
+                <div className="mt-1 text-[11px] text-zinc-400">
+                  {formatTheatricalDay(row.theatrical_date)}
+                </div>
+              )}
               {row?.observed_at && (
-                <div className="mt-1 text-[11px] text-zinc-500">
-                  {formatDateTime(row.observed_at)}
+                <div className="mt-0.5 text-[11px] text-zinc-500">
+                  Ingested {formatDateTime(row.observed_at)}
                 </div>
               )}
             </div>

@@ -15,6 +15,7 @@ export interface ObservationRow {
   metric: string;
   value: number;
   observed_at: string;
+  theatrical_date: string | null;
   previous_value: number | null;
   absolute_change: number | null;
   percentage_change: number | null;

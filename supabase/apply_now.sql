@@ -103,3 +103,7 @@ alter table public.canonical_checks enable row level security;
 drop policy if exists "canonical_checks_all_access" on public.canonical_checks;
 create policy "canonical_checks_all_access" on public.canonical_checks
   for all to anon, authenticated using (true) with check (true);
+
+-- 4) Theatrical calendar day per observation
+alter table public.canonical_observations
+  add column if not exists theatrical_date date;

@@ -27,6 +27,20 @@ export function formatDateTime(iso: string | null | undefined): string {
   });
 }
 
+/** Theatrical calendar day, e.g. "Fri Jul 31". */
+export function formatTheatricalDay(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const day = iso.length >= 10 ? iso.slice(0, 10) : iso;
+  const d = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export function formatShortDate(iso: string | null | undefined): string {
   if (!iso) return "TBD";
   const day = iso.length >= 10 ? iso.slice(0, 10) : iso;

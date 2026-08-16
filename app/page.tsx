@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTrackedMovies } from "@/movie_catalog/repo";
 import { listObservationsForMovies, latestByMetric } from "@/canonical_data/repo";
 import { isDbConfigured } from "@/lib/db";
-import { formatShortDate, primaryReleaseRow, timeAgo } from "@/lib/format";
+import { formatShortDate, formatTheatricalDay, primaryReleaseRow, timeAgo } from "@/lib/format";
 import { formatMoney } from "@/forecasting/money";
 import { MAX_TRACKED } from "@/movie_catalog/types";
 import { LiveRefresh } from "@/components/LiveRefresh";
@@ -35,6 +35,11 @@ function OpeningWeekendCell({ obs }: { obs?: ObservationRow }) {
       {moved && (
         <div className="text-[11px] text-zinc-500">
           {formatMoney(obs.previous_value)} → {formatMoney(obs.value)} {pct}
+        </div>
+      )}
+      {obs.theatrical_date && (
+        <div className="text-[11px] text-zinc-500">
+          {formatTheatricalDay(obs.theatrical_date)}
         </div>
       )}
     </div>

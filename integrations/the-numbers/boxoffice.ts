@@ -26,6 +26,7 @@ export interface CanonicalBoxOfficeSnapshot {
   sunday: number | null;
   opening_weekend: number | null;
   domestic_total: number | null;
+  dates: Partial<Record<BoxOfficeMetric, string>>;
   observedAt: string;
   sourceUrl: string;
 }
@@ -65,6 +66,18 @@ function dateFromHref(href: string | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function isoDateFromDate(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function isoDateFromHref(href: string | undefined): string | null {
+  const d = dateFromHref(href);
+  return d ? isoDateFromDate(d) : null;
+}
+
 /** Parse a The Numbers movie HTML page into a normalized snapshot. */
 export function parseBoxOfficeHtml(
   html: string,
@@ -79,6 +92,7 @@ export function parseBoxOfficeHtml(
     sunday: null,
     opening_weekend: null,
     domestic_total: null,
+    dates: {},
     observedAt,
     sourceUrl,
   };
@@ -99,30 +113,42 @@ export function parseBoxOfficeHtml(
     const weekText = normalizeText($(cells[cells.length - 1]).text());
     if (weekText !== "1") return;
     snapshot.opening_weekend = parseDollarCell($(cells[2]).text());
+    const href = $(cells[0]).find("a").attr("href");
+    const date = isoDateFromHref(href);
+    if (date) snapshot.dates.opening_weekend = date;
   });
 
   const daily = tableAfterHeading($, "Daily Box Office Performance");
   const firstByWeekday: Partial<Record<number, number>> = {};
+  const dateByWeekday: Partial<Record<number, string>> = {};
   daily.find("tr").each((_i, tr) => {
     const cells = $(tr).children("td");
     if (cells.length < 3) return;
     const rank = normalizeText($(cells[1]).text());
     const gross = parseDollarCell($(cells[2]).text());
     if (!gross) return;
+    const href = $(cells[0]).find("a").attr("href");
+    const date = isoDateFromHref(href);
     if (/^P$/i.test(rank) && !snapshot.preview) {
       snapshot.preview = gross;
+      if (date) snapshot.dates.preview = date;
       return;
     }
-    const href = $(cells[0]).find("a").attr("href");
-    const date = dateFromHref(href);
-    if (!date) return;
-    const dow = date.getUTCDay();
-    if (firstByWeekday[dow] == null) firstByWeekday[dow] = gross;
+    const parsed = dateFromHref(href);
+    if (!parsed) return;
+    const dow = parsed.getUTCDay();
+    if (firstByWeekday[dow] == null) {
+      firstByWeekday[dow] = gross;
+      if (date) dateByWeekday[dow] = date;
+    }
   });
 
   snapshot.friday = firstByWeekday[5] ?? null;
   snapshot.saturday = firstByWeekday[6] ?? null;
   snapshot.sunday = firstByWeekday[0] ?? null;
+  if (dateByWeekday[5]) snapshot.dates.friday = dateByWeekday[5];
+  if (dateByWeekday[6]) snapshot.dates.saturday = dateByWeekday[6];
+  if (dateByWeekday[0]) snapshot.dates.sunday = dateByWeekday[0];
 
   return snapshot;
 }
@@ -162,11 +188,21 @@ export async function fetchBoxOffice(url: string): Promise<BoxOfficeFetchResult>
 
 export function snapshotMetrics(
   snapshot: CanonicalBoxOfficeSnapshot
-): Array<{ metric: BoxOfficeMetric; value: number }> {
-  const out: Array<{ metric: BoxOfficeMetric; value: number }> = [];
+): Array<{ metric: BoxOfficeMetric; value: number; theatricalDate: string | null }> {
+  const out: Array<{
+    metric: BoxOfficeMetric;
+    value: number;
+    theatricalDate: string | null;
+  }> = [];
   for (const metric of BOX_OFFICE_METRICS) {
     const value = snapshot[metric];
-    if (typeof value === "number" && value > 0) out.push({ metric, value });
+    if (typeof value === "number" && value > 0) {
+      out.push({
+        metric,
+        value,
+        theatricalDate: snapshot.dates[metric] ?? null,
+      });
+    }
   }
   return out;
 }

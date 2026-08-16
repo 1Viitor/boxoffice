@@ -65,6 +65,7 @@ export async function insertObservation(input: {
   metric: string;
   value: number;
   observedAt: string;
+  theatricalDate: string | null;
   previousValue: number | null;
   absoluteChange: number | null;
   percentageChange: number | null;
@@ -79,6 +80,7 @@ export async function insertObservation(input: {
       metric: input.metric,
       value: input.value,
       observed_at: input.observedAt,
+      theatrical_date: input.theatricalDate,
       previous_value: input.previousValue,
       absolute_change: input.absoluteChange,
       percentage_change: input.percentageChange,
@@ -88,6 +90,19 @@ export async function insertObservation(input: {
     .single();
   if (error) throw new Error(error.message);
   return coerceObs(data as ObservationRow);
+}
+
+export async function updateObservationTheatricalDate(
+  observationId: string,
+  theatricalDate: string
+): Promise<void> {
+  const db = getSupabaseAdmin();
+  if (!db) throw new Error("Database is not configured.");
+  const { error } = await db
+    .from("canonical_observations")
+    .update({ theatrical_date: theatricalDate })
+    .eq("id", observationId);
+  if (error) throw new Error(error.message);
 }
 
 export async function insertCheck(input: {
